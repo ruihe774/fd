@@ -687,8 +687,13 @@ impl Opts {
         // be trying to use that many threads on such an environment, so I think panicing is an
         // appropriate way to handle that.
         std::cmp::max(
-            self.threads
-                .map_or_else(num_cpus::get, |n| n.try_into().expect("too many threads")),
+            self.threads.map_or_else(
+                || match std::thread::available_parallelism() {
+                    Ok(threads) => threads.into(),
+                    Err(_) => 0,
+                },
+                |n| n.try_into().expect("too many threads"),
+            ),
             1,
         )
     }
